@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-🚀 Python CLI App
-Простое приложение для демонстрации GitHub Actions
+Python CLI App
+Simple app for GitHub Actions demo
 """
 
 import sys
@@ -10,7 +10,7 @@ from datetime import datetime
 
 
 def get_system_info():
-    """Получить информацию о системе"""
+    """Get system information"""
     return {
         "python_version": sys.version.split()[0],
         "platform": platform.system(),
@@ -20,17 +20,17 @@ def get_system_info():
 
 
 def main():
-    print("🚀 Python CLI App v1.0.0")
+    print("Python CLI App v1.0.0")
     print("=" * 50)
 
     info = get_system_info()
 
-    print(f"🐍 Python: {info['python_version']}")
-    print(f"💻 Platform: {info['platform']}")
-    print(f"🏗️  Architecture: {info['architecture']}")
-    print(f"⏰ Build time: {info['timestamp']}")
+    print(f"Python: {info['python_version']}")
+    print(f"Platform: {info['platform']}")
+    print(f"Architecture: {info['architecture']}")
+    print(f"Build time: {info['timestamp']}")
     print("=" * 50)
-    print("✅ Приложение работает!")
+    print("Application is working!")
 
     return 0
 
