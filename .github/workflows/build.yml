@@ -1,0 +1,121 @@
+name: 🚀 Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  test:
+    name: 🧪 Test on Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 📦 Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: 📋 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      shell: bash
+
+    - name: ✅ Run tests
+      run: |
+        python app.py
+      shell: bash
+
+    - name: 🔍 Check Python version
+      run: |
+        python --version
+        which python
+      shell: bash
+
+  build:
+    name: 📦 Build artifacts
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: 🏗️ Create executable
+      run: |
+        mkdir -p dist
+        cp app.py dist/
+        cd dist
+        zip -r python-cli-app.zip app.py
+        echo "✅ Артефакт создан!"
+
+    - name: 📤 Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-cli-app
+        path: dist/
+        retention-days: 30
+
+    - name: 🎉 Success message
+      run: |
+        echo "🚀 Сборка завершена успешно!"
+        echo "📦 Артефакт: python-cli-app.zip"
+        echo "🔗 Скачать: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  release:
+    name: 🏷️ Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🏗️ Build release
+      run: |
+        mkdir -p release
+        cp app.py release/
+        cd release
+        zip -r python-cli-app-v1.0.0.zip app.py
+
+    - name: 🚀 Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: release/python-cli-app-v1.0.0.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📝 Summary
+      run: |
+        echo "## 🎉 Сборка завершена!" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Все тесты пройдены" >> $GITHUB_STEP_SUMMARY
+        echo "📦 Артефакт создан" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 [Скачать артефакт](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
